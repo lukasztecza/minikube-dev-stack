@@ -12,6 +12,10 @@ spec:
       labels:
         app: dev-pgsql-app
     spec:
+      volumes:
+        - name: dbdir-volume
+          hostPath:
+            path: '/dev-host-dir/minikube-dev-stack/dev-pgsql/dbdir'
       containers:
         - name: dev-pgsql-container
           image: dev-pgsql
@@ -19,12 +23,15 @@ spec:
           ports:
             - name: app-port
               containerPort: 5432
+          volumeMounts:
+            - name: dbdir-volume
+              mountPath: '/var/lib/postgresql/data/pgdata'
           env:
             - name: POSTGRES_USER
-              value: root
+              value: 'root'
             - name: POSTGRES_PASSWORD
-              value: mypass
+              value: 'mypass'
             - name: POSTGRES_DB
-              value: mydb
+              value: 'mydb'
             - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
+              value: '/var/lib/postgresql/data/pgdata'
