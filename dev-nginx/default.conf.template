@@ -1,0 +1,69 @@
+server {
+    listen 8080 default_server;
+    server_name _;
+
+    location /nginxhealth {
+        add_header Content-Type application/json;
+        return 200 '{"app":"nginx-proxy","status":"ok","server":"public"}';
+    }
+
+    location ~ ^/(favicon.ico|favicon.jpg)$ {
+        root /var/www/html/public;
+        try_files /assets/$uri @deny;
+    }
+
+    location / {
+        try_files /dev/null @deny;
+    }
+
+    location @deny {
+        deny all;
+    }
+}
+
+server {
+    listen 8080;
+    server_name ~^(?<domain>[a-z0-9-]+)\.(?<tld>[a-z]+)(?<local>(|\.localhost))$;
+
+    location / {
+        return 301 http://www.$domain.$tld$local$request_uri;
+    }
+}
+
+server {
+    # THIS MUST NOT BE ACCESSIBLE OUTSIDE OF INTERNAL CONNECTIONS! (hence different port which should not be mapped to publicly available port)
+    listen 8181 default_server;
+    server_name _;
+    root /var/www/html/public;
+
+    location ~ /\. {
+        try_files /dev/null @deny;
+    }
+
+    location ~ \.php {
+        try_files /dev/null @deny;
+    }
+
+    location /nginxhealth {
+        add_header Content-Type application/json;
+        return 200 '{"app":"nginx-proxy","status":"ok","server":"private"}';
+    }
+
+    location ~ ^/(?<service_name>[a-z0-9-\.]+)/ {
+        resolver ${NGINX_LOCATION_RESOLVER};
+        rewrite ^/([a-z0-9-\.]+)/(?<service_path>.*)$ /$2 break;
+        include fastcgi_params;
+        fastcgi_param REQUEST_URI /$service_path;
+        fastcgi_param HTTP_SERVICE_NAME $service_name;
+        fastcgi_param SCRIPT_FILENAME $document_root/index.php;
+        fastcgi_pass $service_name${NGINX_SERVICE_NAME_FQDN_ADDITION}:8000;
+    }
+
+    location / {
+        try_files /dev/null @deny;
+    }
+
+    location @deny {
+        deny all;
+    }
+}

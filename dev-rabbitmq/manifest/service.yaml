@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dev-rabbitmq
+spec:
+  selector:
+    app: dev-rabbitmq-app
+  ports:
+    - name: app-port
+      port: 5672
+    - name: ui-port
+      port: 15672

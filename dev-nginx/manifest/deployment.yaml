@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dev-nginx-deployment
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: dev-nginx-app
+  template:
+    metadata:
+      labels:
+        app: dev-nginx-app
+    spec:
+      #volumes:
+      #  - name: extra-app-assets-volume
+      #    hostPath:
+      #      path: '/dev-host-dir/extra-app/public/assets'
+      containers:
+        - name: dev-nginx-container 
+          image: dev-nginx:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: app-port-pub
+              containerPort: 8080
+            - name: app-port-priv
+              containerPort: 8181
+          livenessProbe:
+            httpGet:
+              path: /nginxhealth
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 2
+            timeoutSeconds: 5
+          #volumeMounts:
+          #  - name: extra-app-assets-volume
+          #    mountPath: '/var/www/html/public/extra-app/assets'
+          env:
+            - name: NGINX_LOCATION_RESOLVER
+              value: kube-dns.kube-system
+            - name: NGINX_SERVICE_NAME_FQDN_ADDITION
+              value: .default.svc.cluster.local

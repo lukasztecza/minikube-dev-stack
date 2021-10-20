@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dev-mysql
+spec:
+  selector:
+    app: dev-mysql-app
+  ports:
+    - name: app-port
+      port: 3306

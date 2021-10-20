@@ -1,0 +1,6 @@
+dev-mysql/dbdir
+dev-pqsql/dbdir
+
+*.swp
+
+/vendor/

@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dev-mysql-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dev-mysql-app
+  template:
+    metadata:
+      labels:
+        app: dev-mysql-app
+    spec:
+      containers:
+        - name: dev-mysql-container
+          image: dev-mysql
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: app-port
+              containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: mypass
+            - name: MYSQL_DATABASE
+              value: mydb
