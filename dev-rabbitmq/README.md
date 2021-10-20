@@ -13,8 +13,8 @@ http://localhost:15672
 - If you prefer you may also use rabbitmqadmin script that was added to the container on build stage (https://www.rabbitmq.com/management-cli.html)
 ```
 docker exec -it dev-rabbitmq sh
-rabbitmqadmin -umyuser -pmypass list exchanges
-rabbitmqadmin -umyuser -pmypass list queues
+rabbitmqadmin -uroot -pmypass list exchanges
+rabbitmqadmin -uroot -pmypass list queues
 ```
 - Once done testing remove container and network
 ```

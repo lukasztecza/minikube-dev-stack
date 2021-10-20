@@ -6,10 +6,6 @@ docker build -t dev-memcached .
 docker network create --driver=bridge testnetwork
 docker run -d --network=testnetwork -p 11211:11211 --name=dev-memcached dev-memcached
 ```
-- To connect to memcached instance you may want to intall telnet (however probably you already have it installed on your machine)
-```
-brew install telnet
-```
 - Now you should be able to connect to memcached instance using
 ```
 telnet localhost 11211

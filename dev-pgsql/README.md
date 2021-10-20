@@ -10,6 +10,10 @@ docker run -d --network=testnetwork -e POSTGRES_USER=root -e POSTGRES_PASSWORD=m
 ```
 docker exec -ti dev-pgsql psql -Uroot -dmydb
 ```
+- Now you should be able to run for instance
+```
+ \dt
+```
 - Note that if you want to mount data directory to make it persistent then add `-v $(pwd)/dbdir:/var/lib/postgresql/data/pgdata` when you execute `docker run`
 - Once done testing remove container and network
 ```
