@@ -10,13 +10,11 @@
 # note that for production ready images builds there should be /manifest/prod/ apart from /manifest/dev/
 
 # these apps live in dev-stack and should only be used on dev as a replacement for prod services where cloud based services should be used
-DEV_APPS=("dev-pgsql" "dev-mysql" "dev-memcached" "dev-rabbitmq" "dev-nginx")
-#DEV_APPS=("dev-pgsql" "dev-memcached" "dev-nginx")
-#DEV_APPS=("dev-pgsql" "dev-nginx")
-#DEV_APPS=("dev-nginx")
+#DEV_APPS=("dev-pgsql" "dev-mysql" "dev-memcached" "dev-redis" "dev-rabbitmq" "dev-nginx")
+DEV_APPS=("dev-pgsql" "dev-nginx" "dev-memcached")
 
 # apps that should always be deployed to cluster beside dev-apps (above)
-ALWAYS_DEPLOY=()
+ALWAYS_DEPLOY=("api-django-app" "www-react-app")
 
 # production docker registry prefix
 PRODUCTION_IMAGE_REPO_PREFIX="some_dockerhub_repo"
@@ -28,7 +26,7 @@ ACTION="help"
 IMAGE="none"
 TAG=$(date +"%Y%m%d%H%M")
 
-while getopts hbpt:i:ud OPT; do
+while getopts hbpt:i:ucd OPT; do
     case "$OPT" in
     h) ACTION="help";;
     b) ACTION="build";;
@@ -36,6 +34,7 @@ while getopts hbpt:i:ud OPT; do
     t) TAG="$OPTARG";;
     i) IMAGE="$OPTARG";;
     u) ACTION="up";;
+    c) ACTION="clean";;
     d) ACTION="deleteall"
     esac
 done
@@ -82,7 +81,7 @@ function buildSpecifiedImageAndDeploy {
             if ! docker image ls 2>&1 | grep $IMAGE | grep $TAG; then
                 echo "Building image $IMAGE:$TAG"
                 echo "Development image"
-                docker build --build-arg=ENABLE_OPCACHE=0 -t $IMAGE:$TAG -f "$CURRENT_DIR/../$IMAGE/Dockerfile" "$CURRENT_DIR/../$IMAGE/."
+                docker build --build-arg=ENABLE_PRODUCTION_BUILDS=0 -t $IMAGE:$TAG -f "$CURRENT_DIR/../$IMAGE/Dockerfile" "$CURRENT_DIR/../$IMAGE/."
                 echo "Updating deployment.yaml with image: $IMAGE:$TAG"
                 echo "For dev deployment"
                 sed -i "" -e "s/image:.*/image: $IMAGE:$TAG/g" "$CURRENT_DIR/../$IMAGE/manifest/dev/deployment.yaml"
@@ -102,6 +101,44 @@ function buildSpecifiedImageAndDeploy {
     else
         echo "Could not find Dockerfile for in $CURRENT_DIR/../$IMAGE"
     fi
+}
+
+function checkDevDirsAndFiles {
+    echo "Creating dev directories and files"
+    if cat "/etc/passwd" 2>&1 | grep "1010"; then
+        echo "user group gid 1010 already created"
+    else
+        sudo /usr/sbin/addgroup --gid 1010 --system devgroup
+        sudo /usr/sbin/adduser --uid 1010 --gid 1010 --system --no-create-home devuser
+    fi
+    if ls "$CURRENT_DIR/dev-nginx/ssldir" 2>&1 | grep "No such file or directory"; then
+        mkdir "$CURRENT_DIR/dev-nginx/ssldir"
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout "$CURRENT_DIR"/dev-nginx/ssldir/privkey.pem \
+        -out "$CURRENT_DIR"/dev-nginx/ssldir/fullchain.pem -subj "/C=CA/ST=Ontario/L=Toronto/O=Local/OU=Local/CN=*.localhost"
+        sudo chown 1010:1010 "$CURRENT_DIR"/dev-nginx/ssldir/*.pem
+    fi
+    if ls "$CURRENT_DIR/dev-nginx/assetsdir" 2>&1 | grep "No such file or directory"; then
+        mkdir "$CURRENT_DIR/dev-nginx/assetsdir"
+        sudo chown 1010:1010 "$CURRENT_DIR"/dev-nginx/assetsdir
+    fi
+    if ls "$CURRENT_DIR/dev-pgsql/dbdir" 2>&1 | grep "No such file or directory"; then
+        mkdir "$CURRENT_DIR/dev-pgsql/dbdir"
+        sudo chown 1010:1010 "$CURRENT_DIR"/dev-pgsql/dbdir
+    fi
+    if ls "$CURRENT_DIR/dev-mysql/dbdir" 2>&1 | grep "No such file or directory"; then
+        mkdir "$CURRENT_DIR/dev-mysql/dbdir"
+        sudo chown 1010:1010 "$CURRENT_DIR"/dev-mysql/dbdir
+    fi
+}
+
+function cleanDevDirsAndFiles {
+    echo "Cleaning up dev directories and files"
+    sudo /usr/sbin/userdel devuser
+    sudo /usr/sbin/groupdel devgroup
+    sudo rm -rf "$CURRENT_DIR/dev-nginx/ssldir";
+    sudo rm -rf "$CURRENT_DIR/dev-nginx/assetsdir";
+    sudo rm -rf "$CURRENT_DIR/dev-pgsql/dbdir";
+    sudo rm -rf "$CURRENT_DIR/dev-mysql/dbdir";
 }
 
 function loadDevImagesAndDeployConfigurations {
@@ -133,6 +170,8 @@ function loadDevImagesAndDeployConfigurations {
     done
     echo "For kubernetes ui run"
     echo "minikube dashboard"
+    echo "If you started dev-nginx then forward ports"
+    echo "kubectl port-forward service/dev-nginx 8080 8181 8443"
 }
 
 if [ "$ACTION" == "help" ]; then
@@ -142,8 +181,8 @@ This helper is to help you build and tag images, deploy or remove configurations
 This helper assumes that you have minikue installed already
 This helper assumes that you have kubectl installed already
 This helper will mount ../. directory to minikube's /dev-host-dir (to make it possible to share files between pods and host machine not only minikube)
-This helper by default passes --build-arg=ENABLE_OPCACHE=0 on docker build stage when you use -b flag (you may want to use it in php builds)
-In order to prepare image for production build set ENABLE_OPCACHE=1 in Dockerfile (if you intend to use it)
+This helper by default passes --build-arg=ENABLE_PRODUCTION_BUILDS=0 on docker build stage when you use -b flag (you may want to use it in php builds)
+In order to prepare image for production build set ENABLE_PRODUCTION_BUILDS=1 in Dockerfile (if you intend to use it)
 This helper updates your deployment.yaml and cronjobs.yaml image line with whatever it builds
 Run like this:
 ./helper.sh -h
@@ -166,7 +205,7 @@ kubectl get all
 kubectl get pods
 kubectl apply -f path_to_manifest_yaml_files
 kubectl delete -f path_to_manifest_yaml_files
-kubectl port-forward service/dev-nginx 8080 8181 
+kubectl port-forward service/dev-nginx 8080 8181 8443
 kubectl port-forward service/dev-memcached 11211
 kubectl port-forward service/dev-rabbitmq 15672 
 kubectl exec -it name_of_some_pod -- sh
@@ -198,10 +237,13 @@ elif [ "$ACTION" == "build" ] && [ "$IMAGE" != "none" ]; then
     buildSpecifiedImageAndDeploy
 elif [ "$ACTION" == "up" ] ; then
     checkMinikubeAndKubectl
+    checkDevDirsAndFiles
     loadDevImagesAndDeployConfigurations
 elif [ "$ACTION" == "prod" ] && [ "$IMAGE" != "none" ]; then
     checkMinikubeAndKubectl
     buildSpecifiedImageForProd
+elif [ "$ACTION" == "clean" ] ; then
+    cleanDevDirsAndFiles
 elif [ "$ACTION" == "deleteall" ] ; then
     minikube delete --all
 else

@@ -12,6 +12,10 @@ spec:
       labels:
         app: dev-mysql-app
     spec:
+      volumes:
+        - name: dbdir-volume
+          hostPath:
+            path: '/dev-host-dir/minikube-dev-stack/dev-mysql/dbdir'
       containers:
         - name: dev-mysql-container
           image: dev-mysql
@@ -19,8 +23,11 @@ spec:
           ports:
             - name: app-port
               containerPort: 3306
+          volumeMounts:
+            - name: dbdir-volume
+              mountPath: '/var/lib/mysql'
           env:
             - name: MYSQL_ROOT_PASSWORD
-              value: mypass
+              value: 'mypass'
             - name: MYSQL_DATABASE
-              value: mydb
+              value: 'mydb'

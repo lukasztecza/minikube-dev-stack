@@ -1,5 +1,7 @@
 dev-mysql/dbdir
 dev-pqsql/dbdir
+dev-nginx/assetsdir
+dev-nginx/ssldir
 
 *.swp
 

@@ -13,10 +13,16 @@ spec:
       labels:
         app: dev-nginx-app
     spec:
-      #volumes:
-      #  - name: extra-app-assets-volume
-      #    hostPath:
-      #      path: '/dev-host-dir/extra-app/public/assets'
+      volumes:
+        - name: assetsdir-volume
+          hostPath:
+            path: '/dev-host-dir/minikube-dev-stack/dev-nginx/assetsdir'
+        - name: ssldir-volume
+          hostPath:
+            path: '/dev-host-dir/minikube-dev-stack/dev-nginx/ssldir'
+#        - name: sample-assets-volume
+#          hostPath:
+#            path: '/dev-host-dir/some-sample-app/assets/static'
       containers:
         - name: dev-nginx-container 
           image: dev-nginx:latest
@@ -26,6 +32,8 @@ spec:
               containerPort: 8080
             - name: app-port-priv
               containerPort: 8181
+            - name: app-port-ssl
+              containerPort: 8443
           livenessProbe:
             httpGet:
               path: /nginxhealth
@@ -34,11 +42,15 @@ spec:
             periodSeconds: 30
             failureThreshold: 2
             timeoutSeconds: 5
-          #volumeMounts:
-          #  - name: extra-app-assets-volume
-          #    mountPath: '/var/www/html/public/extra-app/assets'
+          volumeMounts:
+            - name: assetsdir-volume
+              mountPath: '/var/www/html/public/assetsdir'
+            - name: ssldir-volume
+              mountPath: '/etc/customssl/live'
+#            - name: sample-assets-volume
+#              mountPath: '/var/www/html/public/assets/some-sample-app/static'
           env:
             - name: NGINX_LOCATION_RESOLVER
-              value: kube-dns.kube-system
+              value: 'kube-dns.kube-system'
             - name: NGINX_SERVICE_NAME_FQDN_ADDITION
-              value: .default.svc.cluster.local
+              value: '.default.svc.cluster.local'
