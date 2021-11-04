@@ -1,10 +1,11 @@
+# public non ssl default server
 server {
     listen 8080 default_server;
     server_name _;
 
     location /nginxhealth {
         add_header Content-Type application/json;
-        return 200 '{"app":"nginx-proxy","status":"ok","server":"public"}';
+        return 200 '{"app":"dev-nginx","status":"ok","server":"public"}';
     }
 
     location ~ ^/(favicon.ico|favicon.jpg)$ {
@@ -21,6 +22,7 @@ server {
     }
 }
 
+# private non ssl default server
 server {
     # THIS MUST NOT BE ACCESSIBLE OUTSIDE OF INTERNAL CONNECTIONS! (hence different port which should not be mapped to publicly available port)
     listen 8181 default_server;
@@ -31,29 +33,22 @@ server {
         try_files /dev/null @deny;
     }
 
-#    todo create cascade python -> php
-#    location ~ \.py {
-#        try_files /dev/null @deny;
-#    }
-
-    location ~ \.php {
+    location ~ \.py {
         try_files /dev/null @deny;
     }
 
     location /nginxhealth {
         add_header Content-Type application/json;
-        return 200 '{"app":"nginx-proxy","status":"ok","server":"private"}';
+        return 200 '{"app":"dev-nginx","status":"ok","server":"private"}';
     }
 
-#    todo create cascade python -> php
-    location ~ ^/(?<service_name>[a-z0-9-\.]+)/ {
+    location ~ ^/(?<service_name_part_1>[a-z0-9]+)-(?<service_name_part_2>[a-z0-9]+)-(?<service_name_part_3>[a-z0-9]+)(?<local>(|.localhost))/ {
         resolver ${NGINX_LOCATION_RESOLVER};
+
         rewrite ^/([a-z0-9-\.]+)/(?<service_path>.*)$ /$2 break;
-        include fastcgi_params;
-        fastcgi_param REQUEST_URI /$service_path;
-        fastcgi_param HTTP_SERVICE_NAME $service_name;
-        fastcgi_param SCRIPT_FILENAME $document_root/index.php;
-        fastcgi_pass $service_name${NGINX_SERVICE_NAME_FQDN_ADDITION}:8000;
+
+        proxy_set_header Host $service_name_part_1.$service_name_part_2.$service_name_part_3$local;
+        proxy_pass http://$service_name_part_1-$service_name_part_2-$service_name_part_3.default.svc.cluster.local:8000;
     }
 
     location / {

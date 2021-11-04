@@ -10,13 +10,11 @@
 # note that for production ready images builds there should be /manifest/prod/ apart from /manifest/dev/
 
 # these apps live in dev-stack and should only be used on dev as a replacement for prod services where cloud based services should be used
-DEV_APPS=("dev-pgsql" "dev-mysql" "dev-memcached" "dev-rabbitmq" "dev-nginx")
-#DEV_APPS=("dev-pgsql" "dev-memcached" "dev-nginx")
-#DEV_APPS=("dev-pgsql" "dev-nginx")
-#DEV_APPS=("dev-nginx")
+#DEV_APPS=("dev-pgsql" "dev-mysql" "dev-memcached" "dev-redis" "dev-rabbitmq" "dev-nginx")
+DEV_APPS=("dev-pgsql" "dev-nginx" "dev-memcached")
 
 # apps that should always be deployed to cluster beside dev-apps (above)
-ALWAYS_DEPLOY=()
+ALWAYS_DEPLOY=("api-django-app" "www-react-app")
 
 # production docker registry prefix
 PRODUCTION_IMAGE_REPO_PREFIX="some_dockerhub_repo"
@@ -83,7 +81,7 @@ function buildSpecifiedImageAndDeploy {
             if ! docker image ls 2>&1 | grep $IMAGE | grep $TAG; then
                 echo "Building image $IMAGE:$TAG"
                 echo "Development image"
-                docker build --build-arg=ENABLE_OPCACHE=0 -t $IMAGE:$TAG -f "$CURRENT_DIR/../$IMAGE/Dockerfile" "$CURRENT_DIR/../$IMAGE/."
+                docker build --build-arg=ENABLE_PRODUCTION_BUILDS=0 -t $IMAGE:$TAG -f "$CURRENT_DIR/../$IMAGE/Dockerfile" "$CURRENT_DIR/../$IMAGE/."
                 echo "Updating deployment.yaml with image: $IMAGE:$TAG"
                 echo "For dev deployment"
                 sed -i "" -e "s/image:.*/image: $IMAGE:$TAG/g" "$CURRENT_DIR/../$IMAGE/manifest/dev/deployment.yaml"
@@ -172,6 +170,8 @@ function loadDevImagesAndDeployConfigurations {
     done
     echo "For kubernetes ui run"
     echo "minikube dashboard"
+    echo "If you started dev-nginx then forward ports"
+    echo "kubectl port-forward service/dev-nginx 8080 8181 8443"
 }
 
 if [ "$ACTION" == "help" ]; then
@@ -181,8 +181,8 @@ This helper is to help you build and tag images, deploy or remove configurations
 This helper assumes that you have minikue installed already
 This helper assumes that you have kubectl installed already
 This helper will mount ../. directory to minikube's /dev-host-dir (to make it possible to share files between pods and host machine not only minikube)
-This helper by default passes --build-arg=ENABLE_OPCACHE=0 on docker build stage when you use -b flag (you may want to use it in php builds)
-In order to prepare image for production build set ENABLE_OPCACHE=1 in Dockerfile (if you intend to use it)
+This helper by default passes --build-arg=ENABLE_PRODUCTION_BUILDS=0 on docker build stage when you use -b flag (you may want to use it in php builds)
+In order to prepare image for production build set ENABLE_PRODUCTION_BUILDS=1 in Dockerfile (if you intend to use it)
 This helper updates your deployment.yaml and cronjobs.yaml image line with whatever it builds
 Run like this:
 ./helper.sh -h
