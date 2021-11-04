@@ -32,7 +32,7 @@ minikube config set driver docker
 ```
 - Note that it will mount `../.` directory to minikube's /dev-host-dir (this is to make it possible to share files between pods and host machine not only minikube)
 - Note that deployments that helper uses for dev apps create mounts for databases so data will be persistent (if you do not want that do not mount it in deployments)
-- Note that dev environment create ssl certificates for dev-nginx
+- Note that dev environment creates ssl certificates for dev-nginx
 - Note that in order to mount directories on dev without using root helper creates devuser:devgroup with 1010 uid and gid on your host that is used also by containers
 - If you run `helper.sh` without any flag it will give you help info on other options
 - To close and cleanup cluster (so later you can start new fresh instance) run
