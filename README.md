@@ -45,10 +45,17 @@ minikube dashboard
 ```
 - As long as your app is in paralel directory to `dev-stack` with proper directory structure you can use helper to deploy apps to minikube cluster
 ```
-./helper.sh -b -i some_app
+./helper.sh -b -i some-sample-app
+```
+- Note that this app directory needs to have three segments separated by `-` so for instance `some-sample-app` cause it is used to figure out name of the container and image and domain
+```
+some-sample-app/some_dirs - paralel direcotry
+https://some.sample.app.localhost:8443/ - domain that will be expected by public web server
+http://localhost:8181/some-sample-app.localhost/ - argument that will be expected by private web server (exposed to localhost on dev)
+docker image ls some-sample-app:unique_tag - image and tag created for given app
 ```
 - To prepare image for production run (note -p instead of -b)
 ```
-./helper.sh -p -i some_app
+./helper.sh -p -i some-sample-app
 ```
 - Make sure you kubectl is in proper context
