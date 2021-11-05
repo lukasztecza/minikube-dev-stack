@@ -2,10 +2,10 @@
 
 ### this script assumes that your dev directory structure looks as follows (files important for this script are mentioned here)
 #/some_dir_where_you_clone_git_reposs/minikube-dev-stack/helper.sh
-#/some_dir_where_you_clone_git_reposs/some-app/Dockerfile
-#/some_dir_where_you_clone_git_reposs/some-app/manifest/dev/deployment.yaml
-#/some_dir_where_you_clone_git_reposs/some-app/manifest/dev/service.yaml
-#/some_dir_where_you_clone_git_reposs/some-app/manifest/dev/cronjobs.yaml
+#/some_dir_where_you_clone_git_reposs/some-sample-app/Dockerfile
+#/some_dir_where_you_clone_git_reposs/some-sample-app/manifest/dev/deployment.yaml
+#/some_dir_where_you_clone_git_reposs/some-sample-app/manifest/dev/service.yaml
+#/some_dir_where_you_clone_git_reposs/some-sample-app/manifest/dev/cronjobs.yaml
 #...
 # note that for production ready images builds there should be /manifest/prod/ apart from /manifest/dev/
 
@@ -14,7 +14,7 @@
 DEV_APPS=("dev-pgsql" "dev-nginx" "dev-memcached")
 
 # apps that should always be deployed to cluster beside dev-apps (above)
-ALWAYS_DEPLOY=("api-django-app" "www-react-app")
+ALWAYS_DEPLOY=()
 
 # production docker registry prefix
 PRODUCTION_IMAGE_REPO_PREFIX="some_dockerhub_repo"
@@ -199,7 +199,7 @@ Where instead of -h you may pass any other recognized flag which are:
 -p Build production ready image specified by -i flag (optionally pass -t to specify tag)
 Sample usage
 ./helper.sh -u
-./helper.sh -b -i some-app -t some-tag
+./helper.sh -b -i some-sample-app -t some-tag
 Most common kubectl commands
 kubectl get all
 kubectl get pods
