@@ -18,7 +18,7 @@ https://docs.docker.com/engine/install/linux-postinstall/
 ```
 https://kubernetes.io/docs/tasks/tools/
 ```
-- Get and install minikube that is prebuild cluster for dev - follow steps here
+- Get and install minikube that is prebuilt cluster for dev - follow steps here
 ```
 https://minikube.sigs.k8s.io/docs/start/
 ```
